@@ -1,6 +1,4 @@
-Certainly! Here’s a detailed `README.md` file for your eye health analysis tool project:
 
----
 
 # Eye Health Analysis Tool
 
@@ -90,9 +88,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 For any questions or feedback, please contact:
 
-- **Email**: your.email@example.com
-- **GitHub**: [your-username](https://github.com/your-username)
+- **Email**: adityakumarjha292004@gmail.com
+- **GitHub**: [your-username](https://github.com/adityajhakumar)
 
----
-
-Feel free to adjust the content, especially the links and contact details, according to your specific project and personal information.
