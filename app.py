@@ -93,9 +93,13 @@ healthy_eye_params = {
 
 # Load and preprocess image
 def load_image(image_file):
-    image = Image.open(image_file)
-    image = np.array(image)
-    return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    try:
+        image = Image.open(image_file)
+        image = np.array(image)
+        return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    except Exception as e:
+        st.error(f"Error loading image: {e}")
+        return None
 
 # Normalize image dimensions
 def normalize_image(image, target_size=(500, 500)):
@@ -117,7 +121,6 @@ def extract_features(image):
     if contours:
         largest_contour = max(contours, key=cv2.contourArea)
         (x, y), radius = cv2.minEnclosingCircle(largest_contour)
-        # Convert radius from pixels to mm
         pupil_size_mm = radius * 2  # Diameter in pixels
     
     # Iris pattern (basic uniformity check)
@@ -130,7 +133,6 @@ def extract_features(image):
 
 # Compare with healthy parameters
 def compare_with_healthy(params, extracted_features, age, gender):
-    # Determine the age group
     age_group = None
     if 0 <= age <= 5:
         age_group = "0-5"
@@ -187,16 +189,13 @@ def calculate_diopter(corneal_curvature_mm, pupil_size_mm):
     pupil_size_m = pupil_size_mm / 1000
     
     # Adjust the factor based on realistic models
-    # Focal length in meters (example adjustment factor, may need calibration)
     focal_length_m = corneal_curvature_m / (pupil_size_m * 0.02)  # Example factor adjustment
     
-    # Calculate diopter
     try:
         diopter = 1 / focal_length_m
     except ZeroDivisionError:
         return "Focal length cannot be zero"
     
-    # Adjust diopter to a more realistic range if needed
     diopter = round(diopter, 2)
     if diopter > 30:
         diopter = 30  # Cap the diopter to a reasonable maximum value
@@ -254,6 +253,10 @@ def main():
                 try:
                     # Load and preprocess image
                     image = load_image(uploaded_file)
+                    if image is None:
+                        st.error("Failed to load image.")
+                        return
+                    
                     normalized_image = normalize_image(image)
                     
                     # Display image
@@ -265,39 +268,20 @@ def main():
                     # Compare with healthy parameters
                     comparison_result, status = compare_with_healthy(healthy_eye_params, extracted_features, age, gender)
                     
-                    # Determine age group for report
-                    age_group = None
-                    if 0 <= age <= 5:
-                        age_group = "0-5"
-                    elif 6 <= age <= 12:
-                        age_group = "6-12"
-                    elif 13 <= age <= 20:
-                        age_group = "13-20"
-                    elif 21 <= age <= 30:
-                        age_group = "21-30"
-                    elif 31 <= age <= 40:
-                        age_group = "31-40"
-                    elif 41 <= age <= 50:
-                        age_group = "41-50"
-                    elif 51 <= age <= 60:
-                        age_group = "51-60"
-                    elif 61 <= age <= 70:
-                        age_group = "61-70"
-                    elif 71 <= age <= 80:
-                        age_group = "71-80"
-                    
-                    corneal_curvature_mm = healthy_eye_params["age_groups"].get(age_group, {}).get("corneal_curvature_mm", 7.8)  # Default value if age group not found
+                    # Generate report
+                    corneal_curvature_mm = healthy_eye_params["age_groups"].get("21-30", {}).get("corneal_curvature_mm", 7.8)
                     report = generate_report(extracted_features, comparison_result, status, corneal_curvature_mm)
                     
-                    st.write("## Eye Health Report:")
+                    st.write("## Analysis Report")
                     for key, value in report.items():
-                        st.write(f"{key}: {value}")
+                        st.write(f"**{key}**: {value}")
+
                 except Exception as e:
-                    st.error(f"Error: {e}")
+                    st.error(f"Error during analysis: {e}")
             else:
-                st.warning("Please upload an image file.")
+                st.error("Please upload an image.")
     else:
-        st.info("Please agree to the terms and conditions to proceed.")
+        st.info("You need to agree to the terms and conditions to use this tool.")
 
 if __name__ == "__main__":
     main()
